@@ -82,11 +82,6 @@
     font-size: 18px;
   }
 
-  .zp-barra span {
-    color: var(--suave);
-    font-size: 14px;
-  }
-
   .zp-buscador {
     width: 100%;
     max-width: 320px;
@@ -312,8 +307,7 @@
 
     <div class="zp-barra">
       <div>
-        <strong>Biblioteca de juegos</strong><br>
-        <span id="zpContador">Cargando juegos...</span>
+        <strong>Catalogo Bajos Requisitos</strong>
       </div>
 
       <input
@@ -358,7 +352,6 @@
       const zpGrid = document.getElementById("zpGrid");
       const zpBtnAtras = document.getElementById("zpBtnAtras");
       const zpBtnSiguiente = document.getElementById("zpBtnSiguiente");
-      const zpContador = document.getElementById("zpContador");
       const zpPaginaInfo = document.getElementById("zpPaginaInfo");
       const zpBuscador = document.getElementById("zpBuscador");
       const zpHtmlViejo = document.getElementById("zpHtmlViejo");
@@ -367,7 +360,6 @@
         !zpGrid ||
         !zpBtnAtras ||
         !zpBtnSiguiente ||
-        !zpContador ||
         !zpPaginaInfo ||
         !zpBuscador ||
         !zpHtmlViejo
@@ -383,7 +375,7 @@
         8 = siempre muestra máximo 8 juegos.
         En PC grande será una sola fila de 8.
       */
-      const zpJuegosPorPagina = 16;
+      const zpJuegosPorPagina = 8;
 
       function zpNormalizarUrl(url) {
         if (!url) return "";
@@ -502,9 +494,6 @@
         juegosPagina.forEach(function(juego) {
           zpGrid.appendChild(zpCrearCard(juego));
         });
-
-        zpContador.textContent =
-          "Mostrando " + juegosPagina.length + " de " + zpJuegosFiltrados.length + " juegos";
 
         zpPaginaInfo.textContent =
           "Página " + zpPaginaActual + " de " + totalPaginas;
