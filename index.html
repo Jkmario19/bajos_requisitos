@@ -1,5 +1,5 @@
 <!-- ================================================== -->
-<!-- CATÁLOGO AUTOMÁTICO SOLO IMÁGENES - 8 POR FILA -->
+<!-- CATÁLOGO AUTOMÁTICO SOLO IMÁGENES - 8 POR PÁGINA -->
 <!-- ================================================== -->
 
 <style>
@@ -108,6 +108,7 @@
     grid-template-columns: repeat(8, 180px);
     gap: 8px;
     justify-content: center;
+    min-height: 250px;
   }
 
   .zp-card {
@@ -151,8 +152,13 @@
     filter: brightness(1.08);
   }
 
-  .zp-cargar {
+  .zp-navegacion {
     margin-top: 34px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
     text-align: center;
   }
 
@@ -169,15 +175,23 @@
     transition: 0.25s ease;
   }
 
-  .zp-btn:hover {
+  .zp-btn:hover:not(:disabled) {
     background: #ffd166;
     transform: translateY(-3px);
   }
 
   .zp-btn:disabled {
-    opacity: 0.45;
+    opacity: 0.38;
     cursor: default;
     transform: none;
+    box-shadow: none;
+  }
+
+  .zp-pagina-info {
+    min-width: 140px;
+    color: var(--suave);
+    font-size: 14px;
+    font-weight: bold;
   }
 
   /* Pantallas medianas */
@@ -289,7 +303,7 @@
   <div class="zp-hero">
     <h1>🎮 PC <span>Bajos Requisitos</span></h1>
     <p>
-      Catálogo de juegos livianos y clásicos. Pulsa en “Cargar más juegos”
+      Catálogo de juegos livianos y clásicos. Usa los botones de navegación
       para ver más títulos sin cambiar de página.
     </p>
   </div>
@@ -312,8 +326,10 @@
 
     <div class="zp-grid" id="zpGrid"></div>
 
-    <div class="zp-cargar">
-      <button class="zp-btn" id="zpBtnCargar">Cargar más juegos</button>
+    <div class="zp-navegacion">
+      <button class="zp-btn" id="zpBtnAtras">Atrás</button>
+      <span class="zp-pagina-info" id="zpPaginaInfo">Página 1 de 1</span>
+      <button class="zp-btn" id="zpBtnSiguiente">Siguiente</button>
     </div>
 
   </div>
@@ -340,25 +356,34 @@
   (function () {
     function iniciarCatalogoZP() {
       const zpGrid = document.getElementById("zpGrid");
-      const zpBtnCargar = document.getElementById("zpBtnCargar");
+      const zpBtnAtras = document.getElementById("zpBtnAtras");
+      const zpBtnSiguiente = document.getElementById("zpBtnSiguiente");
       const zpContador = document.getElementById("zpContador");
+      const zpPaginaInfo = document.getElementById("zpPaginaInfo");
       const zpBuscador = document.getElementById("zpBuscador");
       const zpHtmlViejo = document.getElementById("zpHtmlViejo");
 
-      if (!zpGrid || !zpBtnCargar || !zpContador || !zpBuscador || !zpHtmlViejo) {
+      if (
+        !zpGrid ||
+        !zpBtnAtras ||
+        !zpBtnSiguiente ||
+        !zpContador ||
+        !zpPaginaInfo ||
+        !zpBuscador ||
+        !zpHtmlViejo
+      ) {
         return;
       }
 
       let zpTodosLosJuegos = [];
       let zpJuegosFiltrados = [];
-      let zpMostrados = 0;
+      let zpPaginaActual = 1;
 
       /*
-        Cambia este número si quieres.
-        16 significa que al inicio carga 16 imágenes:
-        dos filas de 8 en PC.
+        8 = siempre muestra máximo 8 juegos.
+        En PC grande será una sola fila de 8.
       */
-      const zpCantidadPorClick = 16;
+      const zpJuegosPorPagina = 8;
 
       function zpNormalizarUrl(url) {
         if (!url) return "";
@@ -453,64 +478,69 @@
         return card;
       }
 
-      function zpActualizarContador() {
-        zpContador.textContent =
-          "Mostrando " + zpMostrados + " de " + zpJuegosFiltrados.length + " juegos";
+      function zpTotalPaginas() {
+        return Math.max(1, Math.ceil(zpJuegosFiltrados.length / zpJuegosPorPagina));
       }
 
-      function zpCargarMas() {
-        const siguientes = zpJuegosFiltrados.slice(
-          zpMostrados,
-          zpMostrados + zpCantidadPorClick
-        );
+      function zpMostrarPagina() {
+        zpGrid.innerHTML = "";
 
-        siguientes.forEach(function(juego) {
+        const totalPaginas = zpTotalPaginas();
+
+        if (zpPaginaActual < 1) {
+          zpPaginaActual = 1;
+        }
+
+        if (zpPaginaActual > totalPaginas) {
+          zpPaginaActual = totalPaginas;
+        }
+
+        const inicio = (zpPaginaActual - 1) * zpJuegosPorPagina;
+        const fin = inicio + zpJuegosPorPagina;
+        const juegosPagina = zpJuegosFiltrados.slice(inicio, fin);
+
+        juegosPagina.forEach(function(juego) {
           zpGrid.appendChild(zpCrearCard(juego));
         });
 
-        zpMostrados += siguientes.length;
-        zpActualizarContador();
+        zpContador.textContent =
+          "Mostrando " + juegosPagina.length + " de " + zpJuegosFiltrados.length + " juegos";
 
-        if (zpMostrados >= zpJuegosFiltrados.length) {
-          zpBtnCargar.textContent = "No hay más juegos";
-          zpBtnCargar.disabled = true;
-        } else {
-          zpBtnCargar.textContent = "Cargar más juegos";
-          zpBtnCargar.disabled = false;
-        }
+        zpPaginaInfo.textContent =
+          "Página " + zpPaginaActual + " de " + totalPaginas;
+
+        zpBtnAtras.disabled = zpPaginaActual <= 1;
+        zpBtnSiguiente.disabled = zpPaginaActual >= totalPaginas;
       }
 
-      function zpReiniciarListado(lista) {
-        zpGrid.innerHTML = "";
-        zpMostrados = 0;
-        zpJuegosFiltrados = lista;
-
-        if (zpJuegosFiltrados.length === 0) {
-          zpContador.textContent = "No se encontraron juegos";
-          zpBtnCargar.textContent = "No hay resultados";
-          zpBtnCargar.disabled = true;
-          return;
+      zpBtnAtras.addEventListener("click", function() {
+        if (zpPaginaActual > 1) {
+          zpPaginaActual--;
+          zpMostrarPagina();
         }
+      });
 
-        zpBtnCargar.textContent = "Cargar más juegos";
-        zpBtnCargar.disabled = false;
-        zpCargarMas();
-      }
+      zpBtnSiguiente.addEventListener("click", function() {
+        if (zpPaginaActual < zpTotalPaginas()) {
+          zpPaginaActual++;
+          zpMostrarPagina();
+        }
+      });
 
       zpBuscador.addEventListener("input", function() {
         const busqueda = zpBuscador.value.toLowerCase().trim();
 
-        const filtrados = zpTodosLosJuegos.filter(function(juego) {
+        zpJuegosFiltrados = zpTodosLosJuegos.filter(function(juego) {
           return juego.titulo.toLowerCase().includes(busqueda);
         });
 
-        zpReiniciarListado(filtrados);
+        zpPaginaActual = 1;
+        zpMostrarPagina();
       });
 
-      zpBtnCargar.addEventListener("click", zpCargarMas);
-
       zpTodosLosJuegos = zpExtraerJuegosDesdeHtml();
-      zpReiniciarListado(zpTodosLosJuegos);
+      zpJuegosFiltrados = zpTodosLosJuegos;
+      zpMostrarPagina();
     }
 
     if (document.readyState === "loading") {
